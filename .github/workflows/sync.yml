@@ -21,12 +21,16 @@ jobs:
 
       - name: Sync Files to Server
         run: |
-          # Get list of changed files in the last commit
-          FILES=$(git diff --name-only HEAD^ HEAD)
+          # Use git-diff to get changes between previous and current state, or just HEAD for first push
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            FILES=$(git diff --name-only HEAD^ HEAD)
+          else
+            FILES=$(git ls-files)
+          fi
           
           for file in $FILES; do
-            # Skip excluded files
-            if [[ "$file" == "node_modules"* || "$file" == "database.sqlite"* || "$file" == ".env"* ]]; then
+            # Skip excluded files and directories
+            if [[ "$file" == "node_modules"* || "$file" == "database.sqlite"* || "$file" == ".env"* || "$file" == ".git"* ]]; then
               continue
             fi
             
@@ -36,6 +40,6 @@ jobs:
                 -H "x-sync-secret: ${{ secrets.SYNC_SECRET }}" \
                 -H "x-file-path: $file" \
                 -H "Content-Type: application/octet-stream" \
-                --data-binary @"$file"
+                --data-binary @"$file" --fail || echo "Failed to sync $file"
             fi
           done
