@@ -1,0 +1,7 @@
+node_modules
+UPLOAD_ME
+database.sqlite
+database.sqlite-shm
+database.sqlite-wal
+.env
+.DS_Store

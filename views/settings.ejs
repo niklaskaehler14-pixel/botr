@@ -1,0 +1,51 @@
+<div class="settings-container glass-panel">
+    <div class="panel-header">
+        <h2>Bot Configuration</h2>
+        <p>Configure how your ticket bot handles interactions.</p>
+    </div>
+    <form action="/settings" method="POST" class="settings-form">
+        <div class="form-group">
+            <label for="categoryId">Ticket Category ID</label>
+            <input type="text" id="categoryId" name="categoryId" value="<%= settings.categoryId || '' %>" placeholder="Enter Category ID...">
+            <small>The ID of the category where new ticket channels will be created.</small>
+        </div>
+        <div class="form-group">
+            <label for="supportRoleId">Support Role ID</label>
+            <input type="text" id="supportRoleId" name="supportRoleId" value="<%= settings.supportRoleId || '' %>" placeholder="Enter Support Role ID...">
+            <small>The ID of the role that will have access to all tickets.</small>
+        </div>
+        <div class="form-group">
+            <label for="verifyRoleId">Verify Role ID</label>
+            <input type="text" id="verifyRoleId" name="verifyRoleId" value="<%= settings.verifyRoleId || '' %>" placeholder="Enter Verify Role ID...">
+            <small>The ID of the role given when a user successfully passes the captcha.</small>
+        </div>
+        <div class="form-group">
+            <label for="joinToCreateVoiceId">Join to Create Voice ID</label>
+            <input type="text" id="joinToCreateVoiceId" name="joinToCreateVoiceId" value="<%= settings.joinToCreateVoiceId || '' %>" placeholder="Enter Join to Create Voice Channel ID...">
+            <small>The ID of the voice channel users must join to create a new channel.</small>
+        </div>
+        <div class="form-group">
+            <label for="joinToCreateCategoryId">Join to Create Category ID</label>
+            <input type="text" id="joinToCreateCategoryId" name="joinToCreateCategoryId" value="<%= settings.joinToCreateCategoryId || '' %>" placeholder="Enter Join to Create Category ID...">
+            <small>The ID of the category where new voice channels will be created.</small>
+        </div>
+        <div class="form-group">
+            <label for="logChannelId">Moderation Log Channel ID</label>
+            <input type="text" id="logChannelId" name="logChannelId" value="<%= settings.logChannelId || '' %>" placeholder="Enter Log Channel ID...">
+            <small>The ID of the channel where moderation events and level-ups are logged.</small>
+        </div>
+        <div class="form-group">
+            <label for="welcomeChannelId">Welcome Channel ID</label>
+            <input type="text" id="welcomeChannelId" name="welcomeChannelId" value="<%= settings.welcomeChannelId || '' %>" placeholder="Enter Welcome Channel ID...">
+            <small>The ID of the channel where the bot sends welcome images.</small>
+        </div>
+        <div class="form-group">
+            <label for="aiChannelId">AI Chat Channel ID</label>
+            <input type="text" id="aiChannelId" name="aiChannelId" value="<%= settings.aiChannelId || '' %>" placeholder="Enter AI Channel ID...">
+            <small>Der Bot antwortet in diesem Kanal automatisch mit künstlicher Intelligenz.</small>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+    </form>
+</div>

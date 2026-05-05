@@ -1,0 +1,37 @@
+<div class="tickets-container glass-panel">
+    <div class="panel-header">
+        <h2>Ticket History</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User ID</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (tickets.length === 0) { %>
+                    <tr>
+                        <td colspan="4" class="text-center">No tickets found.</td>
+                    </tr>
+                <% } else { %>
+                    <% tickets.forEach(ticket => { %>
+                        <tr>
+                            <td>#<%= ticket.id %></td>
+                            <td><code><%= ticket.userId %></code></td>
+                            <td>
+                                <span class="badge badge-<%= ticket.status %>">
+                                    <%= ticket.status.toUpperCase() %>
+                                </span>
+                            </td>
+                            <td><%= new Date(ticket.createdAt).toLocaleString() %></td>
+                        </tr>
+                    <% }); %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

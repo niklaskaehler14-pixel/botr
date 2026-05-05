@@ -1,0 +1,52 @@
+<div class="glass-panel" style="padding: 20px;">
+    <div class="panel-header">
+        <h2><i class="fa-solid fa-tags"></i> Reaction Roles</h2>
+        <p>Erstelle Panels, mit denen sich Nutzer selbst Rollen zuweisen können.</p>
+    </div>
+
+    <form action="/roles" method="POST" class="settings-form" style="margin-top: 20px; display: grid; gap: 15px;">
+        <div class="form-group">
+            <label>Panel Name (z.B. Farben)</label>
+            <input type="text" name="panelName" placeholder="Farben" required class="form-input">
+        </div>
+        <div class="form-group">
+            <label>Rollen ID</label>
+            <input type="text" name="roleId" placeholder="112233445566778899" required class="form-input">
+        </div>
+        <div class="form-group">
+            <label>Label (Button Text)</label>
+            <input type="text" name="label" placeholder="Blau" required class="form-input">
+        </div>
+        <div class="form-group">
+            <label>Emoji (Optional)</label>
+            <input type="text" name="emoji" placeholder="🔵" class="form-input">
+        </div>
+        <div class="form-group">
+            <label>Style</label>
+            <select name="style" class="form-input">
+                <option value="Primary">Blau</option>
+                <option value="Secondary">Grau</option>
+                <option value="Success">Grün</option>
+                <option value="Danger">Rot</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Rolle hinzufügen</button>
+    </form>
+
+    <div class="panels-list" style="margin-top: 40px;">
+        <% panels.forEach(panel => { %>
+            <div class="glass-panel" style="margin-bottom: 20px; padding: 15px; border: 1px solid rgba(255,255,255,0.05);">
+                <h3>Panel: <%= panel.panelName %></h3>
+                <p style="font-size: 12px; margin-bottom: 10px;">Nutze <code>/setup-role-panel panel_name:<%= panel.panelName %></code> in Discord, um dieses Panel zu senden.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <% roles.filter(r => r.panelName === panel.panelName).forEach(role => { %>
+                        <div style="background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 5px; display: flex; align-items: center; gap: 10px;">
+                            <span><%= role.emoji %> <%= role.label %></span>
+                            <a href="/roles/delete/<%= role.id %>" style="color: #e74c3c;"><i class="fa-solid fa-xmark"></i></a>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</div>

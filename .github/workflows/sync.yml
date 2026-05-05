@@ -1,0 +1,41 @@
+name: GalaxyBot Live Sync
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'node_modules/**'
+      - 'UPLOAD_ME/**'
+      - '.git/**'
+      - 'database.sqlite*'
+      - 'README.md'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Sync Files to Server
+        run: |
+          # Get list of changed files in the last commit
+          FILES=$(git diff --name-only HEAD^ HEAD)
+          
+          for file in $FILES; do
+            # Skip excluded files
+            if [[ "$file" == "node_modules"* || "$file" == "database.sqlite"* || "$file" == ".env"* ]]; then
+              continue
+            fi
+            
+            if [ -f "$file" ]; then
+              echo "Syncing $file..."
+              curl -X POST "${{ secrets.SYNC_URL }}" \
+                -H "x-sync-secret: ${{ secrets.SYNC_SECRET }}" \
+                -H "x-file-path: $file" \
+                -H "Content-Type: application/octet-stream" \
+                --data-binary @"$file"
+            fi
+          done

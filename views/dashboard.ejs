@@ -1,0 +1,86 @@
+<div class="stats-grid">
+    <div class="stat-card glass-panel">
+        <div class="stat-icon"><i class="fa-solid fa-ticket"></i></div>
+        <div class="stat-info">
+            <h3>Total Tickets</h3>
+            <p><%= totalTickets %></p>
+        </div>
+    </div>
+    <div class="stat-card glass-panel">
+        <div class="stat-icon open"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-info">
+            <h3>Active Users</h3>
+            <p><%= totalUsers %></p>
+        </div>
+    </div>
+    <div class="stat-card glass-panel">
+        <div class="stat-icon bot"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-info">
+            <h3>Total Warns</h3>
+            <p><%= totalWarns %></p>
+        </div>
+    </div>
+</div>
+
+<div class="console-wrapper glass-panel" style="margin-top: 30px; padding: 20px;">
+    <div class="panel-header">
+        <h2><i class="fa-solid fa-chart-line"></i> Server Activity (24h)</h2>
+    </div>
+    <canvas id="activityChart" style="max-height: 300px;"></canvas>
+</div>
+
+<div class="console-wrapper glass-panel" style="margin-top: 30px; padding: 20px;">
+    <div class="panel-header">
+        <h2><i class="fa-solid fa-terminal"></i> Live Console Output</h2>
+    </div>
+    <div id="console-box" style="background: rgba(0,0,0,0.5); color: #00ff00; font-family: 'Courier New', Courier, monospace; padding: 15px; border-radius: 8px; height: 300px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); font-size: 13px; line-height: 1.5;">
+        <div>> System initialized. Handshaking with Discord...</div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('activityChart').getContext('2d');
+    const activityData = <%- JSON.stringify(activity) %>;
+    const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
+    const data = new Array(24).fill(0);
+    
+    activityData.forEach(item => {
+        data[item.hour] = item.total;
+    });
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Messages',
+                data: data,
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+</script>
+
+<div class="recent-activity glass-panel">
+    <div class="panel-header">
+        <h2>Quick Actions</h2>
+    </div>
+    <div class="action-buttons">
+        <a href="/tickets" class="btn btn-primary"><i class="fa-solid fa-eye"></i> View All Tickets</a>
+        <a href="/settings" class="btn btn-secondary"><i class="fa-solid fa-sliders"></i> Configure Bot</a>
+    </div>
+</div>

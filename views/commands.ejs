@@ -1,0 +1,53 @@
+<div class="glass-panel" style="padding: 20px;">
+    <div class="panel-header">
+        <h2><i class="fa-solid fa-code"></i> Custom Commands</h2>
+        <p>Manage triggers and automated responses for your bot.</p>
+    </div>
+
+    <form action="/commands" method="POST" class="settings-form" style="margin-top: 20px; display: grid; gap: 15px;">
+        <div class="form-group">
+            <label>Command Trigger (e.g. !help)</label>
+            <input type="text" name="trigger" placeholder="!website" required class="form-input" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 5px;">
+        </div>
+        <div class="form-group">
+            <label>Bot Response</label>
+            <textarea name="response" placeholder="Besuche unsere Webseite unter..." required class="form-input" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 5px; height: 100px;"></textarea>
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" name="isEmbed" id="isEmbed">
+            <label for="isEmbed">Send as Embed</label>
+        </div>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Add Command</button>
+    </form>
+
+    <div class="commands-list" style="margin-top: 40px;">
+        <h3>Active Commands</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+            <thead>
+                <tr style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <th style="padding: 10px;">Trigger</th>
+                    <th style="padding: 10px;">Response</th>
+                    <th style="padding: 10px;">Type</th>
+                    <th style="padding: 10px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (commands.length === 0) { %>
+                    <tr>
+                        <td colspan="4" style="padding: 20px; text-align: center; color: rgba(255,255,255,0.5);">No custom commands yet.</td>
+                    </tr>
+                <% } %>
+                <% commands.forEach(cmd => { %>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 10px;"><code><%= cmd.trigger %></code></td>
+                        <td style="padding: 10px;"><%= cmd.response.substring(0, 50) %><%= cmd.response.length > 50 ? '...' : '' %></td>
+                        <td style="padding: 10px;"><span style="background: <%= cmd.isEmbed ? '#3498db' : '#95a5a6' %>; padding: 2px 8px; border-radius: 10px; font-size: 12px;"><%= cmd.isEmbed ? 'Embed' : 'Text' %></span></td>
+                        <td style="padding: 10px;">
+                            <a href="/commands/delete/<%= cmd.trigger %>" style="color: #e74c3c; text-decoration: none;"><i class="fa-solid fa-trash"></i></a>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>
