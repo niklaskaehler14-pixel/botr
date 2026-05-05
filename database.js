@@ -4,7 +4,7 @@ const path = require('path');
 const db = new Database(path.join(__dirname, 'database.sqlite'), { verbose: console.log });
 
 // Initialize database schema
-db.pragma('journal_mode = WAL');
+db.pragma('journal_mode = DELETE'); // Use DELETE mode instead of WAL for compatibility
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS settings (
