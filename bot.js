@@ -259,17 +259,19 @@ client.on('messageCreate', async message => {
             } catch (e) { console.error("AI Mod error:", e); }
         }
 
-        // B. AI Chatbot
         const aiChannelSetting = db.prepare('SELECT value FROM settings WHERE key = ?').get('aiChannelId');
         if (aiChannelSetting && aiChannelSetting.value === message.channel.id) {
             message.channel.sendTyping();
             try {
+                if (!model) {
+                    return message.reply("Ich habe keine KI-Verbindung. Bitte trage den GEMINI_API_KEY in die `.env` Datei ein!");
+                }
                 const prompt = `Du bist GalaxyBot, ein hilfreicher und cooler Discord-Bot. Antworte freundlich auf: ${message.content}`;
                 const result = await model.generateContent(prompt);
                 return message.reply(result.response.text());
             } catch (e) {
                 console.error("AI Chat error:", e);
-                return message.reply("Ich habe gerade Kopfschmerzen... frag mich später nochmal.");
+                return message.reply(`Ich habe gerade Kopfschmerzen... Fehler: ${e.message}`);
             }
         }
     }
