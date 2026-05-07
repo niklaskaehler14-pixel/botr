@@ -5,6 +5,21 @@ const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerSta
 const play = require('play-dl');
 const db = require('./database');
 
+function parseDuration(timeStr) {
+    if (!timeStr) return null;
+    const match = timeStr.match(/^(\d+)([smhd])$/);
+    if (!match) return null;
+    const value = parseInt(match[1]);
+    const unit = match[2];
+    switch(unit) {
+        case 's': return value * 1000;
+        case 'm': return value * 60 * 1000;
+        case 'h': return value * 60 * 60 * 1000;
+        case 'd': return value * 24 * 60 * 60 * 1000;
+        default: return null;
+    }
+}
+
 // Gemini Setup
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 const model = genAI ? genAI.getGenerativeModel({ model: "gemini-1.5-flash" }) : null;
@@ -58,13 +73,21 @@ client.once('ready', async () => {
             description: 'Warn a user.',
             options: [
                 { name: 'user', type: 6, description: 'The user to warn', required: true },
-                { name: 'reason', type: 3, description: 'Reason for the warning', required: true }
+                { name: 'reason', type: 3, description: 'Reason for the warning', required: true },
+                { name: 'duration', type: 3, description: 'Timeout duration (e.g., 1h, 1d, 30m)', required: false }
             ]
         },
         {
             name: 'warnings',
             description: 'List warnings for a user.',
             options: [{ name: 'user', type: 6, description: 'The user to check', required: true }]
+        },
+        {
+            name: 'remove-warn',
+            description: 'Remove a warning from a user.',
+            options: [
+                { name: 'warn_id', type: 4, description: 'The ID of the warning to remove', required: true }
+            ]
         },
         {
             name: 'setup-role-panel',
@@ -406,11 +429,46 @@ client.on('interactionCreate', async interaction => {
             if (!interaction.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return interaction.reply({ content: 'No permission.', ephemeral: true });
             const target = interaction.options.getUser('user');
             const reason = interaction.options.getString('reason');
+            const durationStr = interaction.options.getString('duration');
+            
+            let timeoutMs = null;
+            if (durationStr) {
+                timeoutMs = parseDuration(durationStr);
+                if (!timeoutMs || timeoutMs > 28 * 24 * 60 * 60 * 1000) {
+                    return interaction.reply({ content: 'Ungültige Zeitangabe! Bitte nutze z.B. 1h, 1d, 30m (Max 28 Tage).', ephemeral: true });
+                }
+            }
 
             db.prepare('INSERT INTO warns (userId, guildId, reason, moderatorId) VALUES (?, ?, ?, ?)').run(target.id, interaction.guild.id, reason, interaction.user.id);
             
-            await logEvent(interaction.guild, 'User Verwarnt', `**Nutzer:** ${target.toString()}\n**Grund:** ${reason}\n**Moderator:** ${interaction.user.toString()}`, '#e67e22');
-            await interaction.reply({ content: `${target.toString()} wurde verwarnt.`, ephemeral: true });
+            let timeMsg = "";
+            if (timeoutMs) {
+                try {
+                    const targetMember = await interaction.guild.members.fetch(target.id);
+                    await targetMember.timeout(timeoutMs, reason);
+                    timeMsg = `\n**Timeout:** ${durationStr}`;
+                } catch(e) {
+                    timeMsg = `\n*(Timeout konnte nicht angewendet werden)*`;
+                }
+            }
+
+            await logEvent(interaction.guild, 'User Verwarnt', `**Nutzer:** ${target.toString()}\n**Grund:** ${reason}\n**Moderator:** ${interaction.user.toString()}${timeMsg}`, '#e67e22');
+            
+            // Public message so everyone sees it
+            await interaction.reply({ content: `🚨 ${target.toString()} wurde verwarnt.\n**Grund:** ${reason}${timeMsg}`, ephemeral: false });
+
+        } else if (interaction.commandName === 'remove-warn') {
+            if (!interaction.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return interaction.reply({ content: 'No permission.', ephemeral: true });
+            const warnId = interaction.options.getInteger('warn_id');
+            const warnInfo = db.prepare('SELECT * FROM warns WHERE id = ? AND guildId = ?').get(warnId, interaction.guild.id);
+            
+            if (!warnInfo) {
+                return interaction.reply({ content: `Warnung mit ID **#${warnId}** wurde nicht gefunden.`, ephemeral: true });
+            }
+            
+            db.prepare('DELETE FROM warns WHERE id = ? AND guildId = ?').run(warnId, interaction.guild.id);
+            await logEvent(interaction.guild, 'Warnung entfernt', `**Warn-ID:** #${warnId}\n**Von Nutzer:** <@${warnInfo.userId}>\n**Entfernt von:** ${interaction.user.toString()}`, '#2ecc71');
+            await interaction.reply({ content: `✅ Warnung **#${warnId}** von <@${warnInfo.userId}> wurde erfolgreich entfernt.`, ephemeral: true });
 
         } else if (interaction.commandName === 'warnings') {
             const target = interaction.options.getUser('user');

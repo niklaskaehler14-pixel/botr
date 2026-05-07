@@ -1,16 +1,18 @@
-require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 
-console.log("Starting GalaxyBot...");
-
-// 1. Check for node_modules
+// 1. Check for node_modules BEFORE any external requires
 if (!fs.existsSync(path.join(__dirname, 'node_modules'))) {
-    console.error("\nFATAL ERROR: 'node_modules' folder not found!");
-    console.error("Please run 'npm install' in this folder before starting.");
-    console.log("\nPress any key to exit...");
+    console.error("\n" + "=".repeat(40));
+    console.error("FATAL ERROR: 'node_modules' folder not found!");
+    console.error("Please run 'npm install' on your server or click 'Add to Startup' in your panel.");
+    console.error("=".repeat(40) + "\n");
     process.exit(1);
 }
+
+require('dotenv').config();
+
+console.log("Starting GalaxyBot...");
 
 // 2. Check for critical environment variables
 const requiredEnv = ['DISCORD_TOKEN', 'ADMIN_PASSWORD', 'SYNC_SECRET'];

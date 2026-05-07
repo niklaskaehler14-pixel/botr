@@ -14,7 +14,7 @@ New-Item -ItemType Directory -Path $targetDir | Out-Null
 $excludeList = @("node_modules", "UPLOAD_ME", ".git", "database.sqlite-shm", "database.sqlite-wal", "prepare_upload.ps1", "DEPLOYMENT.md")
 
 Write-Host "Copying files..." -ForegroundColor Cyan
-Get-ChildItem -Path $sourceDir -Exclude $excludeList | ForEach-Object {
+Get-ChildItem -Path $sourceDir | Where-Object { $excludeList -notcontains $_.Name } | ForEach-Object {
     Copy-Item -Path $_.FullName -Destination $targetDir -Recurse -Force
 }
 

@@ -39,3 +39,4 @@ pm2 start index.js --name galaxy-bot
 - **Canvas errors**: If you get errors related to `canvas`, your server might be missing system dependencies. On Linux (Ubuntu/Debian), run:
   `sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
 - **SQLite errors**: If `better-sqlite3` fails to install, ensure you have Python and a C++ compiler installed on the server.
+- **Missing Package (dotenv)**: If your hosting panel (Wisp/Pterodactyl) warns that `dotenv` is missing, click the **"Add to Startup"** button in the warning modal. This will add the package to the server's auto-installer.
