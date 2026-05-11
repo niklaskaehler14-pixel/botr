@@ -313,21 +313,19 @@ client.on('messageCreate', async message => {
     if (!user) {
         db.prepare('INSERT INTO users (userId, guildId, xp, level, lastMessageAt) VALUES (?, ?, ?, ?, ?)').run(userId, guildId, 10, 0, now.toISOString());
     } else {
-        const lastMsg = new Date(user.lastMessageAt);
-        if (now - lastMsg > 60000) { // 1 minute cooldown
-            const xpGain = Math.floor(Math.random() * 11) + 15; // 15-25 XP
-            let newXp = user.xp + xpGain;
-            let newLevel = user.level;
-            
-            const xpNeeded = (newLevel + 1) * 500;
-            if (newXp >= xpNeeded) {
-                newLevel++;
-                message.reply(`🎉 **Glückwunsch!** Du hast Level **${newLevel}** erreicht!`);
-                logEvent(message.guild, 'Level Up', `${message.author.toString()} hat Level **${newLevel}** erreicht!`, '#f1c40f');
-            }
-            
-            db.prepare('UPDATE users SET xp = ?, level = ?, lastMessageAt = ? WHERE userId = ? AND guildId = ?').run(newXp, newLevel, now.toISOString(), userId, guildId);
+        // No cooldown: Give XP on every message (Random 1-50 XP)
+        const xpGain = Math.floor(Math.random() * 50) + 1; 
+        let newXp = user.xp + xpGain;
+        let newLevel = user.level;
+        
+        const xpNeeded = (newLevel + 1) * 500;
+        if (newXp >= xpNeeded) {
+            newLevel++;
+            message.reply(`🎉 **Glückwunsch!** Du hast Level **${newLevel}** erreicht!`);
+            logEvent(message.guild, 'Level Up', `${message.author.toString()} hat Level **${newLevel}** erreicht!`, '#f1c40f');
         }
+        
+        db.prepare('UPDATE users SET xp = ?, level = ?, lastMessageAt = ? WHERE userId = ? AND guildId = ?').run(newXp, newLevel, now.toISOString(), userId, guildId);
     }
 });
 
@@ -590,6 +588,12 @@ client.on('interactionCreate', async interaction => {
     } else if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
             const guild = interaction.guild;
+
+            // Check if user already has an open ticket
+            const existingTicket = db.prepare('SELECT * FROM tickets WHERE userId = ? AND status = ?').get(interaction.user.id, 'open');
+            if (existingTicket) {
+                return interaction.reply({ content: '❌ Du hast bereits ein offenes Ticket! Bitte schließe es zuerst.', ephemeral: true });
+            }
             
             // Generate ticket ID
             const insert = db.prepare(`INSERT INTO tickets (userId, status) VALUES (?, ?)`).run(interaction.user.id, 'open');
