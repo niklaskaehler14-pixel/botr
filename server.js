@@ -12,19 +12,23 @@ const { client, sendTicketPanel, sendVerifyPanel } = require('./bot');
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
-passport.use(new DiscordStrategy({
-    clientID: process.env.DISCORD_CLIENT_ID || '',
-    clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
-    callbackURL: process.env.DASHBOARD_URL ? `${process.env.DASHBOARD_URL}/auth/discord/callback` : 'http://localhost:11501/auth/discord/callback',
-    scope: ['identify']
-}, (accessToken, refreshToken, profile, done) => {
-    // Only allow specific users or owner
-    const ownerId = process.env.OWNER_ID;
-    if (ownerId && profile.id !== ownerId) {
-        return done(null, false, { message: 'Unauthorized' });
-    }
-    return done(null, profile);
-}));
+if (process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET) {
+    passport.use(new DiscordStrategy({
+        clientID: process.env.DISCORD_CLIENT_ID,
+        clientSecret: process.env.DISCORD_CLIENT_SECRET,
+        callbackURL: process.env.DASHBOARD_URL ? `${process.env.DASHBOARD_URL}/auth/discord/callback` : 'http://localhost:11501/auth/discord/callback',
+        scope: ['identify']
+    }, (accessToken, refreshToken, profile, done) => {
+        // Only allow specific users or owner
+        const ownerId = process.env.OWNER_ID;
+        if (ownerId && profile.id !== ownerId) {
+            return done(null, false, { message: 'Unauthorized' });
+        }
+        return done(null, profile);
+    }));
+} else {
+    console.warn("[Auth] Discord OAuth credentials missing. Discord login will be disabled.");
+}
 
 
 const http = require('http');
