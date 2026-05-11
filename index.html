@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GalaxyBot | Professional Discord Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #0b0e14;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); overflow-x: hidden; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+        /* Navbar */
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; }
+        .logo { font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 10px; background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* Hero */
+        .hero { padding: 100px 0; text-align: center; position: relative; }
+        .hero::before { content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%); z-index: -1; }
+
+        h1 { font-size: 4rem; font-weight: 800; margin-bottom: 20px; line-height: 1.1; }
+        .hero p { font-size: 1.2rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 40px auto; }
+
+        .btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; border-radius: 12px; font-weight: 700; text-decoration: none; transition: all 0.3s; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4); background: var(--primary-dark); }
+
+        /* Features */
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; padding: 50px 0; }
+        .feature-card { background: var(--glass); border: 1px solid var(--border); padding: 40px; border-radius: 24px; backdrop-filter: blur(10px); transition: border-color 0.3s; }
+        .feature-card:hover { border-color: var(--primary); }
+        .feature-card i { font-size: 2rem; color: var(--primary); margin-bottom: 20px; }
+        .feature-card h3 { font-size: 1.5rem; margin-bottom: 10px; }
+        .feature-card p { color: var(--text-muted); line-height: 1.6; }
+
+        footer { text-align: center; padding: 100px 0 50px 0; color: var(--text-muted); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <div class="logo"><i class="fas fa-moon"></i> GalaxyBot</div>
+            <a href="https://discord.com" class="btn" style="color: white; border: 1px solid var(--border);">Invite Bot</a>
+        </nav>
+
+        <section class="hero">
+            <h1>The Next Generation of <br> <span style="color: var(--primary);">Discord Management</span></h1>
+            <p>A powerful ticket system, advanced verification, and AI-driven automation for your community. All in one place.</p>
+            <div style="display: flex; justify-content: center; gap: 20px;">
+                <a href="YOUR_DASHBOARD_URL_HERE" class="btn btn-primary"><i class="fas fa-cog"></i> Open Dashboard</a>
+                <a href="#features" class="btn" style="color: white; border: 1px solid var(--border);">Learn More</a>
+            </div>
+        </section>
+
+        <section class="features" id="features">
+            <div class="feature-card">
+                <i class="fas fa-ticket"></i>
+                <h3>Ticket System</h3>
+                <p>Support your members with professional, organized text channels created instantly.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-shield-halved"></i>
+                <h3>Advanced Verification</h3>
+                <p>Keep bots away with our secure emoji captcha system. Private and fast.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-robot"></i>
+                <h3>AI Automation</h3>
+                <p>Harness the power of Gemini AI to moderate and chat with your community automatically.</p>
+            </div>
+        </section>
+
+        <footer>
+            &copy; 2026 GalaxyBot Team. Built for professional communities.
+        </footer>
+    </div>
+</body>
+</html>

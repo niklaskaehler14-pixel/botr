@@ -16,12 +16,19 @@
         <% if (error) { %>
             <div class="alert alert-error"><%= error %></div>
         <% } %>
-        <form action="/login" method="POST">
+        <form action="/login" method="POST" class="glass-panel">
             <div class="form-group">
                 <label for="password">Admin Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter password...">
+                <input type="password" id="password" name="password" placeholder="Enter password..." required>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Log In</button>
+            <button type="submit" class="btn btn-primary btn-block">Login with Password</button>
+            
+            <% if (hasDiscordAuth) { %>
+                <div style="margin: 20px 0; text-align: center; color: var(--text-muted);">OR</div>
+                <a href="/auth/discord" class="btn btn-secondary btn-block" style="background: #5865F2; border: none;">
+                    <i class="fa-brands fa-discord"></i> Login with Discord
+                </a>
+            <% } %>
         </form>
     </div>
 </body>

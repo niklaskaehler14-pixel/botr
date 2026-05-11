@@ -1,9 +1,30 @@
 const express = require('express');
+const cors = require('cors');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
+const passport = require('passport');
+const DiscordStrategy = require('passport-discord').Strategy;
 const db = require('./database');
-const { client, sendTicketPanel, sendVerifyPanel } = require('./bot'); // require bot to get stats and send panels
+const { client, sendTicketPanel, sendVerifyPanel } = require('./bot'); 
+
+// Passport setup
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
+
+passport.use(new DiscordStrategy({
+    clientID: process.env.DISCORD_CLIENT_ID || '',
+    clientSecret: process.env.DISCORD_CLIENT_SECRET || '',
+    callbackURL: process.env.DASHBOARD_URL ? `${process.env.DASHBOARD_URL}/auth/discord/callback` : 'http://localhost:11501/auth/discord/callback',
+    scope: ['identify']
+}, (accessToken, refreshToken, profile, done) => {
+    // Only allow specific users or owner
+    const ownerId = process.env.OWNER_ID;
+    if (ownerId && profile.id !== ownerId) {
+        return done(null, false, { message: 'Unauthorized' });
+    }
+    return done(null, profile);
+}));
 
 
 const http = require('http');
@@ -42,9 +63,12 @@ app.use(session({
     saveUninitialized: true
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Auth middleware
 const requireAuth = (req, res, next) => {
-    if (req.session.loggedIn) {
+    if (req.isAuthenticated() || req.session.loggedIn) {
         next();
     } else {
         res.redirect('/login');
@@ -53,7 +77,11 @@ const requireAuth = (req, res, next) => {
 
 // Routes
 app.get('/login', (req, res) => {
-    res.render('login', { title: 'Login', error: null });
+    res.render('login', { 
+        title: 'Login', 
+        error: req.query.error || null,
+        hasDiscordAuth: !!(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET)
+    });
 });
 
 app.post('/login', (req, res) => {
@@ -62,13 +90,23 @@ app.post('/login', (req, res) => {
         req.session.loggedIn = true;
         res.redirect('/');
     } else {
-        res.render('login', { title: 'Login', error: 'Invalid password' });
+        res.render('login', { title: 'Login', error: 'Invalid password', hasDiscordAuth: false });
     }
 });
 
+// Discord Auth Routes
+app.get('/auth/discord', passport.authenticate('discord'));
+app.get('/auth/discord/callback', passport.authenticate('discord', {
+    failureRedirect: '/login?error=Unauthorized'
+}), (req, res) => {
+    res.redirect('/');
+});
+
 app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/login');
+    req.logout(() => {
+        req.session.destroy();
+        res.redirect('/login');
+    });
 });
 
 app.get('/', requireAuth, (req, res) => {
@@ -132,7 +170,23 @@ app.get('/settings', requireAuth, (req, res) => {
     const settings = {};
     settingsRows.forEach(row => settings[row.key] = row.value);
     
-    res.render('settings', { title: 'Settings', settings });
+    let roles = [];
+    let textChannels = [];
+    let voiceChannels = [];
+    let categories = [];
+    
+    if (client.isReady()) {
+        const guild = client.guilds.cache.first();
+        if (guild) {
+            roles = guild.roles.cache.filter(r => r.name !== '@everyone').map(r => ({ id: r.id, name: r.name }));
+            const allChannels = guild.channels.cache;
+            textChannels = allChannels.filter(c => c.type === 0).map(c => ({ id: c.id, name: c.name }));
+            voiceChannels = allChannels.filter(c => c.type === 2).map(c => ({ id: c.id, name: c.name }));
+            categories = allChannels.filter(c => c.type === 4).map(c => ({ id: c.id, name: c.name }));
+        }
+    }
+    
+    res.render('settings', { title: 'Settings', settings, roles, textChannels, voiceChannels, categories });
 });
 
 app.post('/settings', requireAuth, (req, res) => {
@@ -143,7 +197,40 @@ app.post('/settings', requireAuth, (req, res) => {
         insert.run(key, settings[key]);
     }
     
-    res.redirect('/settings');
+    res.redirect('/settings?success=true');
+});
+
+app.get('/broadcast', requireAuth, (req, res) => {
+    let roles = [];
+    let channels = [];
+    if (client.isReady()) {
+        const guild = client.guilds.cache.first();
+        if (guild) {
+            roles = guild.roles.cache.filter(r => r.name !== '@everyone').map(r => ({ id: r.id, name: r.name }));
+            channels = guild.channels.cache.filter(c => c.type === 0).map(c => ({ id: c.id, name: c.name })); // Text channels only
+        }
+    }
+    res.render('broadcast', { title: 'Broadcast', roles, channels, success: req.query.success === 'true' });
+});
+
+app.post('/broadcast', requireAuth, async (req, res) => {
+    const { channelId, roleId, message } = req.body;
+    if (!channelId || !message) return res.redirect('/broadcast?error=Missing fields');
+
+    try {
+        const channel = await client.channels.fetch(channelId);
+        if (channel) {
+            let content = message;
+            if (roleId) content = `<@&${roleId}>\n${message}`;
+            await channel.send(content);
+            res.redirect('/broadcast?success=true');
+        } else {
+            res.redirect('/broadcast?error=Channel not found');
+        }
+    } catch (e) {
+        console.error(e);
+        res.redirect(`/broadcast?error=${encodeURIComponent(e.message)}`);
+    }
 });
 
 app.get('/setup', requireAuth, (req, res) => {

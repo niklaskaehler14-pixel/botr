@@ -4,48 +4,185 @@
         <p>Configure how your ticket bot handles interactions.</p>
     </div>
     <form action="/settings" method="POST" class="settings-form">
+        <% if (locals.success) { %>
+            <div class="alert alert-success">Settings saved successfully!</div>
+        <% } %>
+        
         <div class="form-group">
-            <label for="categoryId">Ticket Category ID</label>
-            <input type="text" id="categoryId" name="categoryId" value="<%= settings.categoryId || '' %>" placeholder="Enter Category ID...">
-            <small>The ID of the category where new ticket channels will be created.</small>
+            <label for="categoryId">Ticket Category</label>
+            <select id="categoryId" name="categoryId">
+                <option value="">-- Select Category --</option>
+                <% categories.forEach(cat => { %>
+                    <option value="<%= cat.id %>" <%= settings.categoryId === cat.id ? 'selected' : '' %>><%= cat.name %></option>
+                <% }) %>
+            </select>
+            <small>Category where new tickets are created.</small>
         </div>
+
         <div class="form-group">
-            <label for="supportRoleId">Support Role ID</label>
-            <input type="text" id="supportRoleId" name="supportRoleId" value="<%= settings.supportRoleId || '' %>" placeholder="Enter Support Role ID...">
-            <small>The ID of the role that will have access to all tickets.</small>
+            <label for="supportRoleId">Support Role</label>
+            <select id="supportRoleId" name="supportRoleId">
+                <option value="">-- Select Role --</option>
+                <% roles.forEach(role => { %>
+                    <option value="<%= role.id %>" <%= settings.supportRoleId === role.id ? 'selected' : '' %>>@<%= role.name %></option>
+                <% }) %>
+            </select>
+            <small>Role that sees all tickets.</small>
         </div>
+
         <div class="form-group">
-            <label for="verifyRoleId">Verify Role ID</label>
-            <input type="text" id="verifyRoleId" name="verifyRoleId" value="<%= settings.verifyRoleId || '' %>" placeholder="Enter Verify Role ID...">
-            <small>The ID of the role given when a user successfully passes the captcha.</small>
+            <label for="verifyRoleId">Verification Roles (Comma separated)</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="verifyRoleId" name="verifyRoleId" value="<%= settings.verifyRoleId || '' %>" placeholder="Role IDs...">
+                <select style="width: 150px;" onchange="if(this.value){ document.getElementById('verifyRoleId').value += (document.getElementById('verifyRoleId').value ? ',' : '') + this.value; this.value=''; }">
+                    <option value="">+ Add Role</option>
+                    <% roles.forEach(role => { %>
+                        <option value="<%= role.id %>">@<%= role.name %></option>
+                    <% }) %>
+                </select>
+            </div>
+            <small>Roles given after verification. Use the dropdown to add roles easily.</small>
         </div>
+
         <div class="form-group">
-            <label for="joinToCreateVoiceId">Join to Create Voice ID</label>
-            <input type="text" id="joinToCreateVoiceId" name="joinToCreateVoiceId" value="<%= settings.joinToCreateVoiceId || '' %>" placeholder="Enter Join to Create Voice Channel ID...">
-            <small>The ID of the voice channel users must join to create a new channel.</small>
+            <label for="joinToCreateVoiceId">Join to Create Voice Channel</label>
+            <select id="joinToCreateVoiceId" name="joinToCreateVoiceId">
+                <option value="">-- Select Channel --</option>
+                <% voiceChannels.forEach(vc => { %>
+                    <option value="<%= vc.id %>" <%= settings.joinToCreateVoiceId === vc.id ? 'selected' : '' %>>🔊 <%= vc.name %></option>
+                <% }) %>
+            </select>
+            <small>Channel users join to create their own voice channel.</small>
         </div>
+
         <div class="form-group">
-            <label for="joinToCreateCategoryId">Join to Create Category ID</label>
-            <input type="text" id="joinToCreateCategoryId" name="joinToCreateCategoryId" value="<%= settings.joinToCreateCategoryId || '' %>" placeholder="Enter Join to Create Category ID...">
-            <small>The ID of the category where new voice channels will be created.</small>
+            <label for="joinToCreateCategoryId">Join to Create Category</label>
+            <select id="joinToCreateCategoryId" name="joinToCreateCategoryId">
+                <option value="">-- Select Category --</option>
+                <% categories.forEach(cat => { %>
+                    <option value="<%= cat.id %>" <%= settings.joinToCreateCategoryId === cat.id ? 'selected' : '' %>><%= cat.name %></option>
+                <% }) %>
+            </select>
+            <small>Category for dynamic voice channels.</small>
         </div>
+
         <div class="form-group">
-            <label for="logChannelId">Moderation Log Channel ID</label>
-            <input type="text" id="logChannelId" name="logChannelId" value="<%= settings.logChannelId || '' %>" placeholder="Enter Log Channel ID...">
-            <small>The ID of the channel where moderation events and level-ups are logged.</small>
+            <label for="logChannelId">Moderation Log Channel</label>
+            <select id="logChannelId" name="logChannelId">
+                <option value="">-- Select Channel --</option>
+                <% textChannels.forEach(tc => { %>
+                    <option value="<%= tc.id %>" <%= settings.logChannelId === tc.id ? 'selected' : '' %>>#<%= tc.name %></option>
+                <% }) %>
+            </select>
+            <small>Channel for logs and level-ups.</small>
         </div>
+
         <div class="form-group">
-            <label for="welcomeChannelId">Welcome Channel ID</label>
-            <input type="text" id="welcomeChannelId" name="welcomeChannelId" value="<%= settings.welcomeChannelId || '' %>" placeholder="Enter Welcome Channel ID...">
-            <small>The ID of the channel where the bot sends welcome images.</small>
+            <label for="welcomeChannelId">Welcome Channel</label>
+            <select id="welcomeChannelId" name="welcomeChannelId">
+                <option value="">-- Select Channel --</option>
+                <% textChannels.forEach(tc => { %>
+                    <option value="<%= tc.id %>" <%= settings.welcomeChannelId === tc.id ? 'selected' : '' %>>#<%= tc.name %></option>
+                <% }) %>
+            </select>
+            <small>Channel for welcome images.</small>
         </div>
+
         <div class="form-group">
-            <label for="aiChannelId">AI Chat Channel ID</label>
-            <input type="text" id="aiChannelId" name="aiChannelId" value="<%= settings.aiChannelId || '' %>" placeholder="Enter AI Channel ID...">
-            <small>Der Bot antwortet in diesem Kanal automatisch mit künstlicher Intelligenz.</small>
+            <label for="aiChannelId">AI Chat Channel</label>
+            <select id="aiChannelId" name="aiChannelId">
+                <option value="">-- Select Channel --</option>
+                <% textChannels.forEach(tc => { %>
+                    <option value="<%= tc.id %>" <%= settings.aiChannelId === tc.id ? 'selected' : '' %>>#<%= tc.name %></option>
+                <% }) %>
+            </select>
+            <small>Bot will auto-reply in this channel.</small>
         </div>
+
+        <div class="form-group">
+            <label for="autoPingChannelId">Auto-Ping Channel</label>
+            <select id="autoPingChannelId" name="autoPingChannelId">
+                <option value="">-- Select Channel --</option>
+                <% textChannels.forEach(tc => { %>
+                    <option value="<%= tc.id %>" <%= settings.autoPingChannelId === tc.id ? 'selected' : '' %>>#<%= tc.name %></option>
+                <% }) %>
+            </select>
+            <small>Whenever a message is sent here, the role below is pinged.</small>
+        </div>
+
+        <div class="form-group">
+            <label for="autoPingRoleId">Auto-Ping Role</label>
+            <select id="autoPingRoleId" name="autoPingRoleId">
+                <option value="">-- Select Role --</option>
+                <% roles.forEach(role => { %>
+                    <option value="<%= role.id %>" <%= settings.autoPingRoleId === role.id ? 'selected' : '' %>>@<%= role.name %></option>
+                <% }) %>
+            </select>
+            <small>Role to be automatically pinged.</small>
+        </div>
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Changes</button>
         </div>
     </form>
+
+    <hr style="margin: 40px 0; border-color: rgba(255,255,255,0.1);">
+
+    <div class="reference-section">
+        <h3>Manual ID Reference</h3>
+        <p>If a channel or role is missing, you can still copy the ID manually here.</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <h4>Roles</h4>
+                <div class="scroll-table" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                    <table class="table" style="font-size: 0.9em;">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% roles.forEach(role => { %>
+                                <tr>
+                                    <td><%= role.name %></td>
+                                    <td><code onclick="copyToClipboard('<%= role.id %>')" style="cursor: pointer; color: #3498db;"><%= role.id %></code></td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div>
+                <h4>All Channels</h4>
+                <div class="scroll-table" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                    <table class="table" style="font-size: 0.9em;">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% textChannels.concat(voiceChannels).concat(categories).forEach(channel => { %>
+                                <tr>
+                                    <td><%= channel.name %></td>
+                                    <td><code onclick="copyToClipboard('<%= channel.id %>')" style="cursor: pointer; color: #3498db;"><%= channel.id %></code></td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Copied ID: ' + text);
+    });
+}
+</script>

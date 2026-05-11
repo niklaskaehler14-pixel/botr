@@ -5,6 +5,11 @@ const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerSta
 const play = require('play-dl');
 const db = require('./database');
 
+play.getFreeClientID().then(id => {
+    play.setToken({ soundcloud: { client_id: id } });
+    console.log("[Music] SoundCloud Free Client ID configured.");
+}).catch(e => console.error("SoundCloud setup error:", e));
+
 function parseDuration(timeStr) {
     if (!timeStr) return null;
     const match = timeStr.match(/^(\d+)([smhd])$/);
@@ -21,7 +26,7 @@ function parseDuration(timeStr) {
 }
 
 // Gemini Setup
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY.trim()) : null;
 const model = genAI ? genAI.getGenerativeModel({ model: "gemini-1.5-flash" }) : null;
 
 // Music Queue
@@ -106,6 +111,10 @@ client.once('ready', async () => {
         {
             name: 'stop',
             description: 'Stop the music and leave the voice channel.'
+        },
+        {
+            name: 'dashboard',
+            description: 'Get the link to the bot admin dashboard.'
         }
     ];
 
@@ -290,6 +299,14 @@ client.on('messageCreate', async message => {
     // 2. XP Gain
     const userId = message.author.id;
     const guildId = message.guild.id;
+
+    // 3. Auto-Ping Feature
+    const autoPingChannel = db.prepare('SELECT value FROM settings WHERE key = ?').get('autoPingChannelId');
+    const autoPingRole = db.prepare('SELECT value FROM settings WHERE key = ?').get('autoPingRoleId');
+    
+    if (autoPingChannel && autoPingChannel.value === message.channel.id && autoPingRole && autoPingRole.value) {
+        message.channel.send(`<@&${autoPingRole.value.trim()}>`).catch(console.error);
+    }
     
     const user = db.prepare('SELECT * FROM users WHERE userId = ? AND guildId = ?').get(userId, guildId);
 
@@ -516,7 +533,7 @@ client.on('interactionCreate', async interaction => {
                 
                 queue.player.on(AudioPlayerStatus.Idle, () => {
                     queue.songs.shift();
-                    if (queue.songs.length > 0) playSong(interaction.guild.id);
+                    if (queue.songs.length > 0) playSong(interaction.guild.id, interaction.channel);
                     else {
                         queue.connection.destroy();
                         queues.delete(interaction.guild.id);
@@ -524,23 +541,29 @@ client.on('interactionCreate', async interaction => {
                 });
             }
 
-            const searchResult = [];
-            if (play.sp_validate(query) !== 'search' && query.includes('spotify.com')) {
-                if (play.is_expired()) await play.refreshToken();
-                const sp_data = await play.spotify(query);
-                const results = await play.search(`${sp_data.name} ${sp_data.artists[0].name}`, { limit: 1 });
-                if (results.length > 0) searchResult.push(results[0]);
-            } else {
-                const results = await play.search(query, { limit: 1 });
-                if (results.length > 0) searchResult.push(results[0]);
-            }
+            try {
+                const searchResult = [];
+                if (query.includes('spotify.com')) {
+                    return interaction.editReply('❌ Spotify-Links benötigen eine manuelle API-Autorisierung im Code. Bitte suche stattdessen einfach nach dem Songnamen!');
+                } else if (query.includes('youtube.com') || query.includes('youtu.be')) {
+                    const results = await play.search(query, { limit: 1 });
+                    if (results.length > 0) searchResult.push(results[0]);
+                } else {
+                    // Fallback to SoundCloud search to avoid YouTube 403 blocks
+                    const results = await play.search(query, { source: { soundcloud: 'tracks' }, limit: 1 });
+                    if (results.length > 0) searchResult.push(results[0]);
+                }
 
-            if (searchResult.length === 0) return interaction.editReply('Nichts gefunden.');
-            
-            queue.songs.push(searchResult[0]);
-            if (queue.songs.length === 1) playSong(interaction.guild.id);
-            
-            await interaction.editReply(`🎶 Zu Warteschlange hinzugefügt: **${searchResult[0].title}**`);
+                if (searchResult.length === 0) return interaction.editReply('❌ Nichts gefunden.');
+                
+                queue.songs.push(searchResult[0]);
+                if (queue.songs.length === 1) await playSong(interaction.guild.id, interaction.channel);
+                
+                await interaction.editReply(`🎶 Zu Warteschlange hinzugefügt: **${searchResult[0].name || searchResult[0].title}**`);
+            } catch (e) {
+                console.error("Play error:", e);
+                await interaction.editReply('❌ Fehler beim Suchen/Abspielen. (YouTube blockiert momentan viele Bots).');
+            }
 
         } else if (interaction.commandName === 'skip') {
             const queue = queues.get(interaction.guild.id);
@@ -554,6 +577,15 @@ client.on('interactionCreate', async interaction => {
             queue.connection.destroy();
             queues.delete(interaction.guild.id);
             await interaction.reply('🛑 Musik gestoppt.');
+        } else if (interaction.commandName === 'dashboard') {
+            const dashboardUrl = process.env.DASHBOARD_URL || `http://localhost:${process.env.PORT || 3000}`;
+            const embed = new EmbedBuilder()
+                .setTitle('🚀 GalaxyBot Dashboard')
+                .setDescription(`Manage your bot settings, roles, and more via our secure web interface.\n\n**Link:** [Open Dashboard](${dashboardUrl})`)
+                .setColor('#6366f1')
+                .setThumbnail(client.user.displayAvatarURL());
+            
+            await interaction.reply({ embeds: [embed], ephemeral: true });
         }
     } else if (interaction.isButton()) {
         if (interaction.customId === 'create_ticket') {
@@ -676,18 +708,33 @@ client.on('interactionCreate', async interaction => {
                 // Success
                 const verifyRoleSetting = db.prepare(`SELECT value FROM settings WHERE key = ?`).get('verifyRoleId');
                 if (verifyRoleSetting && verifyRoleSetting.value) {
-                    const roleId = verifyRoleSetting.value.trim();
-                    const role = interaction.guild.roles.cache.get(roleId);
-                    if (role) {
-                        try {
-                            await interaction.member.roles.add(role);
-                            await interaction.reply({ content: '✅ Verification successful! You have been given the role.', ephemeral: true });
-                        } catch(e) {
-                            console.error("Role assignment error:", e);
-                            await interaction.reply({ content: 'I do not have permission to assign that role. Please contact an admin.', ephemeral: true });
+                    const roleIds = verifyRoleSetting.value.split(',').map(id => id.trim()).filter(id => id.length > 0);
+                    const addedRoles = [];
+                    const failedRoles = [];
+
+                    for (const roleId of roleIds) {
+                        const role = interaction.guild.roles.cache.get(roleId);
+                        if (role) {
+                            try {
+                                await interaction.member.roles.add(role);
+                                addedRoles.push(role.name);
+                            } catch(e) {
+                                console.error(`Role assignment error for ${roleId}:`, e);
+                                failedRoles.push(roleId);
+                            }
+                        } else {
+                            failedRoles.push(roleId);
                         }
+                    }
+
+                    if (addedRoles.length > 0) {
+                        let msg = `✅ Verification successful! You have been given the following role(s): **${addedRoles.join(', ')}**.`;
+                        if (failedRoles.length > 0) msg += `\n*(Note: Could not assign some roles: ${failedRoles.join(', ')})*`;
+                        await interaction.reply({ content: msg, ephemeral: true });
+                    } else if (failedRoles.length > 0) {
+                        await interaction.reply({ content: `✅ Verification successful, but I couldn't assign the roles (${failedRoles.join(', ')}). Please contact an admin.`, ephemeral: true });
                     } else {
-                        await interaction.reply({ content: `✅ Verification successful! (Role ID ${roleId} not found on server)`, ephemeral: true });
+                        await interaction.reply({ content: '✅ Verification successful!', ephemeral: true });
                     }
                 } else {
                     await interaction.reply({ content: '✅ Verification successful! (No role configured)', ephemeral: true });
@@ -714,14 +761,21 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-async function playSong(guildId) {
+async function playSong(guildId, channel) {
     const queue = queues.get(guildId);
     if (!queue || queue.songs.length === 0) return;
 
-    const song = queue.songs[0];
-    const stream = await play.stream(song.url);
-    const resource = createAudioResource(stream.stream, { inputType: stream.type });
-    queue.player.play(resource);
+    try {
+        const song = queue.songs[0];
+        const stream = await play.stream(song.url);
+        const resource = createAudioResource(stream.stream, { inputType: stream.type });
+        queue.player.play(resource);
+    } catch (e) {
+        console.error("Stream error:", e);
+        if (channel) channel.send(`❌ Fehler beim Streamen von **${queue.songs[0].name || queue.songs[0].title}**. (Oft durch YouTube 403-Blocks). Song wird übersprungen...`);
+        queue.songs.shift();
+        playSong(guildId, channel);
+    }
 }
 
 // Join to Create Logic
