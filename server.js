@@ -68,11 +68,28 @@ app.use(passport.session());
 
 // Auth middleware
 const requireAuth = (req, res, next) => {
+    // 1. Check for session/passport auth
     if (req.isAuthenticated() || req.session.loggedIn) {
-        next();
-    } else {
-        res.redirect('/login');
+        return next();
     }
+
+    // 2. Check for Basic Auth (used by the static dashboard)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Basic ')) {
+        const credentials = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+        const user = credentials[0];
+        const pass = credentials[1];
+        
+        if (user === 'admin' && pass === (process.env.ADMIN_PASSWORD || 'admin')) {
+            return next();
+        }
+    }
+
+    // 3. Unauthorized
+    if (req.path.startsWith('/api/')) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    res.redirect('/login');
 };
 
 // Routes
