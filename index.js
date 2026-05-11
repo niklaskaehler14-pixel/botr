@@ -15,12 +15,12 @@ require('dotenv').config();
 console.log("Starting GalaxyBot...");
 
 // 2. Check for critical environment variables
-const requiredEnv = ['DISCORD_TOKEN', 'ADMIN_PASSWORD', 'SYNC_SECRET'];
+const requiredEnv = ['DISCORD_TOKEN'];
 const missingEnv = requiredEnv.filter(key => !process.env[key]);
 
 if (missingEnv.length > 0) {
-    console.error(`\nFATAL ERROR: Missing variables in .env: ${missingEnv.join(', ')}`);
-    console.error("Ensure your .env file exists and contains these values.");
+    console.error(`\nFATAL ERROR: Missing variables: ${missingEnv.join(', ')}`);
+    console.error("Please add these to your Render 'Environment' settings.");
     process.exit(1);
 }
 
