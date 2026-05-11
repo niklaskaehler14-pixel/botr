@@ -165,6 +165,13 @@ app.get('/roles/delete/:id', requireAuth, (req, res) => {
     res.redirect('/roles');
 });
 
+app.get('/api/settings', requireAuth, (req, res) => {
+    const settingsRows = db.prepare('SELECT * FROM settings').all();
+    const settings = {};
+    settingsRows.forEach(row => settings[row.key] = row.value);
+    res.json(settings);
+});
+
 app.get('/settings', requireAuth, (req, res) => {
     const settingsRows = db.prepare('SELECT * FROM settings').all();
     const settings = {};

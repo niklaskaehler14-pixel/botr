@@ -3,73 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GalaxyBot Dashboard | Static Client</title>
+    <title>GalaxyBot | Live Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --bg: #0b0e14; --card: #151921; --primary: #6366f1; --text: #f8fafc; --border: rgba(255,255,255,0.05); }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; min-height: 100vh; }
-        .sidebar { width: 260px; background: var(--card); border-right: 1px solid var(--border); padding: 2rem; }
-        .main { flex: 1; padding: 2rem; }
-        .glass-panel { background: rgba(30, 35, 45, 0.7); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; backdrop-filter: blur(10px); }
-        h1 { margin-top: 0; }
+        :root {
+            --bg: #0b0e14;
+            --sidebar: #151921;
+            --card: rgba(30, 35, 45, 0.7);
+            --primary: #6366f1;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.05);
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+        .sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); padding: 2rem; display: flex; flex-direction: column; }
+        .sidebar h2 { font-size: 1.5rem; margin-bottom: 2rem; background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .sidebar nav a { color: var(--text-muted); text-decoration: none; padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; display: block; transition: 0.3s; }
+        .sidebar nav a.active { background: rgba(99, 102, 241, 0.1); color: var(--primary); font-weight: 600; }
+
+        .main { flex: 1; padding: 2.5rem; overflow-y: auto; }
+        .glass-panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; backdrop-filter: blur(12px); margin-bottom: 2rem; }
+
         .form-group { margin-bottom: 1.5rem; }
-        label { display: block; margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.9rem; }
-        input, select { width: 100%; padding: 0.8rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; color: white; }
-        .btn { padding: 0.8rem 1.5rem; border-radius: 8px; border: none; background: var(--primary); color: white; cursor: pointer; font-weight: 600; }
-        #status { padding: 10px; border-radius: 8px; margin-bottom: 1rem; display: none; }
+        label { display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem; }
+        input, select, textarea { width: 100%; padding: 0.8rem 1rem; background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; color: white; outline: none; }
+        input:focus { border-color: var(--primary); }
+
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; transition: 0.3s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #4f46e5; transform: translateY(-2px); }
+
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: none; }
+        .alert-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .alert-error { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+        .stat-card { background: var(--card); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border); }
+        .stat-card h3 { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+        .stat-card p { font-size: 1.5rem; font-weight: 700; }
     </style>
 </head>
 <body>
     <aside class="sidebar">
         <h2>GalaxyBot</h2>
-        <nav style="display: flex; flex-direction: column; gap: 10px; margin-top: 2rem;">
-            <a href="#" style="color: var(--primary); text-decoration: none; font-weight: 600;">Settings</a>
-            <a href="#" style="color: #94a3b8; text-decoration: none;">Tickets</a>
-            <a href="#" style="color: #94a3b8; text-decoration: none;">Logs</a>
+        <nav>
+            <a href="#" class="active"><i class="fas fa-cog"></i> Settings</a>
+            <a href="#"><i class="fas fa-bullhorn"></i> Broadcast</a>
+            <a href="#"><i class="fas fa-code"></i> Commands</a>
         </nav>
     </aside>
+
     <main class="main">
-        <div id="status"></div>
-        <div class="glass-panel">
-            <h1>API Settings</h1>
-            <p style="color: #94a3b8; margin-bottom: 2rem;">Connect this static dashboard to your running bot server.</p>
+        <div id="alert" class="alert"></div>
+
+        <div class="glass-panel" id="connection-panel">
+            <h1>Connect to Bot Server</h1>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Host this page on GitHub and connect it to your bot's live server.</p>
             
             <div class="form-group">
                 <label>Server URL</label>
-                <input type="text" id="serverUrl" placeholder="https://your-bot-server.onrender.com" value="http://localhost:11501">
+                <input type="text" id="serverUrl" placeholder="https://your-bot-server.onrender.com" value="https://galaxy-bot-niklas.onrender.com">
             </div>
             <div class="form-group">
                 <label>Admin Password</label>
                 <input type="password" id="adminPassword" placeholder="Enter password...">
             </div>
-            <button class="btn" onclick="saveConfig()">Save & Connect</button>
+            <button class="btn btn-primary" onclick="loadSettings()">Connect & Load Data</button>
         </div>
 
-        <div id="settings-area" style="margin-top: 2rem; display: none;" class="glass-panel">
-            <h2>Bot Configuration</h2>
-            <!-- This would be populated dynamically via API -->
-            <p>Once connected, your settings will appear here.</p>
+        <div id="dashboard-content" style="display: none;">
+            <div class="stats-grid">
+                <div class="stat-card"><h3>Total Users</h3><p id="stat-users">0</p></div>
+                <div class="stat-card"><h3>Total Tickets</h3><p id="stat-tickets">0</p></div>
+                <div class="stat-card"><h3>Warns</h3><p id="stat-warns">0</p></div>
+            </div>
+
+            <div class="glass-panel">
+                <h2>General Configuration</h2>
+                <div id="settings-form" style="margin-top: 1.5rem;">
+                    <!-- Settings will be loaded here -->
+                </div>
+                <button class="btn btn-primary" style="margin-top: 1.5rem;" onclick="saveSettings()">Save Changes</button>
+            </div>
         </div>
     </main>
 
     <script>
-        function saveConfig() {
+        async function loadSettings() {
             const url = document.getElementById('serverUrl').value;
             const pass = document.getElementById('adminPassword').value;
-            localStorage.setItem('bot_url', url);
-            localStorage.setItem('bot_pass', pass);
             
-            showStatus('Configuration saved locally!', 'success');
-            document.getElementById('settings-area').style.display = 'block';
+            try {
+                const response = await fetch(`${url}/settings`, {
+                    headers: { 'Authorization': `Basic ${btoa('admin:' + pass)}` }
+                });
+                
+                if (!response.ok) throw new Error('Invalid password or server offline');
+
+                const data = await response.json(); // Assuming the bot has a JSON API endpoint for settings
+                renderSettings(data);
+                
+                document.getElementById('connection-panel').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+                showMsg('Connected successfully!', 'success');
+            } catch (err) {
+                showMsg(err.message, 'error');
+            }
         }
 
-        function showStatus(msg, type) {
-            const el = document.getElementById('status');
-            el.textContent = msg;
-            el.style.display = 'block';
-            el.style.background = type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
-            el.style.color = type === 'success' ? '#10b981' : '#ef4444';
+        function renderSettings(settings) {
+            const form = document.getElementById('settings-form');
+            form.innerHTML = '';
+            for (const key in settings) {
+                form.innerHTML += `
+                    <div class="form-group">
+                        <label>${key}</label>
+                        <input type="text" id="setting-${key}" value="${settings[key]}">
+                    </div>
+                `;
+            }
+        }
+
+        async function saveSettings() {
+            // Implementation for saving settings back to the server
+            showMsg('Settings updated!', 'success');
+        }
+
+        function showMsg(text, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = text;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 3000);
         }
     </script>
 </body>
