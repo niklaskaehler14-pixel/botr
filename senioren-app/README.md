@@ -23,6 +23,10 @@ Wichtig ist der Branch `claude/seniors-app-ios-android-16ao1k` – auf `main` gi
 `senioren-app/` noch nicht. In einer bereits vorhandenen Kopie des Repositorys genügt
 `git checkout claude/seniors-app-ios-android-16ao1k`.
 
+**Ohne Terminal:** Im Ordner `senioren-app` liegt für Windows `START.bat` – einfach
+doppelklicken, das Skript prüft Node.js, installiert beim ersten Mal die Pakete und startet
+die App. Auf Mac und Linux macht `./start.sh` dasselbe.
+
 Danach steht im Terminal ein QR-Code. Von dort aus geht es auf drei Wegen weiter:
 
 | Taste im Terminal | Was passiert | Voraussetzung |
