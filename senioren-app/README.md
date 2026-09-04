@@ -8,6 +8,44 @@ Lexikon der Fachbegriffe.
 Die App läuft aus einer gemeinsamen Codebasis auf **iPhone (iOS)** und **Android-Handys**
 (zusätzlich als Web-App im Browser).
 
+## Schnellstart – lokal ausprobieren
+
+Voraussetzung: **Node.js 20 oder neuer** ([nodejs.org](https://nodejs.org)). Sonst nichts.
+
+```bash
+git clone -b claude/seniors-app-ios-android-16ao1k https://github.com/niklaskaehler14-pixel/botr.git
+cd botr/senioren-app
+npm install       # einmalig, dauert ca. 30 Sekunden
+npm start
+```
+
+Wichtig ist der Branch `claude/seniors-app-ios-android-16ao1k` – auf `main` gibt es den Ordner
+`senioren-app/` noch nicht. In einer bereits vorhandenen Kopie des Repositorys genügt
+`git checkout claude/seniors-app-ios-android-16ao1k`.
+
+Danach steht im Terminal ein QR-Code. Von dort aus geht es auf drei Wegen weiter:
+
+| Taste im Terminal | Was passiert | Voraussetzung |
+| --- | --- | --- |
+| `w` | Die App öffnet sich im Browser | nichts |
+| `a` | Start im Android-Emulator | Android Studio |
+| `i` | Start im iOS-Simulator | macOS mit Xcode |
+
+**Auf dem eigenen Handy** – der schnellste Weg zum echten Eindruck: Die App **Expo Go**
+aus dem App Store oder Play Store installieren, Handy und Rechner ins selbe WLAN, dann den
+QR-Code aus dem Terminal scannen (iPhone: mit der Kamera-App, Android: in Expo Go über
+„Scan QR code“). Klappt das WLAN nicht, hilft `npm start -- --tunnel`.
+
+Einzelne Zielplattform direkt starten:
+
+```bash
+npm run web       # Browser
+npm run android   # Android-Emulator oder angeschlossenes Gerät
+npm run ios       # iOS-Simulator (nur macOS)
+```
+
+Beenden mit `Strg + C` im Terminal.
+
 ## Warum die App so aussieht, wie sie aussieht
 
 Der gesamte Entwurf folgt den Bedürfnissen der Zielgruppe:
@@ -75,13 +113,8 @@ Datei in `src/content/kurse/` – ohne Änderung an der Oberfläche.
 
 ## Entwicklung
 
-```bash
-cd senioren-app
-npm install
-npm start           # danach: i für iOS-Simulator, a für Android, w für den Browser
-```
-
-Auf einem echten Gerät: **Expo Go** installieren und den angezeigten QR-Code scannen.
+Der Start ist oben unter „Schnellstart" beschrieben. Änderungen im Code erscheinen sofort
+im laufenden Programm (Fast Refresh) – ein Neustart ist nicht nötig.
 
 Prüfungen:
 
